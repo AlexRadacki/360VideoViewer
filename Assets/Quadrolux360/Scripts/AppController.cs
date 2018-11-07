@@ -1,93 +1,57 @@
-﻿using System.Collections;
+﻿using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using System.IO;
 
 public class AppController : Singleton<AppController> {
 
-    public RectTransform canvasTransform;
-
-    private string pathToConfig;
-
-	// Use this for initialization
-	void Start ()
+    void Awake()
     {
         System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+    }
 
-        // load config file for the canvas placement
-#if UNITY_EDITOR
-        pathToConfig = Application.streamingAssetsPath;
-#elif UNITY_ANDROID
-        pathToConfig = Application.persistentDataPath;
-#endif
+    // Use this for initialization
+    void Start ()
+    {
+        LoadBackground();
+        LoadVideos();
+    }
+	
+	// Update is called once per frame
+	void Update () {
+		
+	}
 
-        if (File.Exists(pathToConfig + "/config.txt"))
+    void LoadBackground()
+    {
+        MediaLoader.Instance.LoadImage(GetBgName(), PanoramaCanvas.Instance.mat);
+    }
+
+    void LoadVideos()
+    {
+        string[] files = Directory.GetFiles(MediaLoader.Instance.videoPath);
+        List<string> validFiles = new List<string>();
+
+        for (int i = 0; i < files.Length; i++)
         {
-            string[] configData = File.ReadAllLines(pathToConfig + "/config.txt");
-            if (configData.Length > 0)
+            if (files[i].EndsWith("mov") || files[i].EndsWith("avi") || files[i].EndsWith("mp4"))
             {
-                // apply values
-                // position
-
-                canvasTransform.position = Vector3FromString(configData[0], ',');
-                canvasTransform.sizeDelta = Vector2FromString(configData[1], ',');
-                canvasTransform.rotation = Quaternion.Euler(Vector3FromString(configData[2], ','));
-                canvasTransform.localScale = Vector3FromString(configData[3], ',');
+                validFiles.Add(files[i]);
             }
         }
-        else
+
+        foreach (var item in validFiles)
         {
-            Debug.LogWarning("config.txt not found in path: " + pathToConfig);
+            MediaLoader.Instance.CreateVideoItem(item);
         }
     }
 
-    private void Update()
+    string GetBgName()
     {
-        if (Input.GetButtonDown("Jump"))
+        if (Directory.GetFiles(MediaLoader.Instance.imagePath).Length == 0)
         {
-            SaveConfigToFile();
+            Debug.LogWarning("no bg image found in: "+ MediaLoader.Instance.imagePath);
+            return "";
         }
-    }
-
-    void SaveConfigToFile()
-    {
-        if (!File.Exists(pathToConfig + "/config.txt"))
-        {
-            File.Create(pathToConfig + "/config.txt");
-        }
-
-        string[] saveData = new string[6];
-        saveData[0] = StringFromVector3(canvasTransform.position);
-        saveData[1] = StringFromVector3(canvasTransform.sizeDelta);
-        saveData[2] = StringFromVector3(canvasTransform.rotation.eulerAngles);
-        saveData[3] = StringFromVector3(canvasTransform.localScale);
-
-        File.WriteAllLines(pathToConfig + "/config.txt", saveData);
-    }
-
-
-    Vector2 Vector2FromString(string input, char seperator)
-    {
-        string[] vectorData = input.Split(seperator);
-        return new Vector2(float.Parse(vectorData[0]), float.Parse(vectorData[1]));
-    }
-
-    Vector3 Vector3FromString(string input, char seperator)
-    {
-        string[] vectorData = input.Split(seperator);
-        return new Vector3(float.Parse(vectorData[0]), float.Parse(vectorData[1]), float.Parse(vectorData[2]));
-    }
-
-    string StringFromVector2(Vector2 input)
-    {
-        string output = input.x + "," + input.y;
-        return output;
-    }
-
-    string StringFromVector3(Vector3 input)
-    {
-        string output = input.x + "," + input.y + "," + input.z;
-        return output;
+        return Directory.GetFiles(MediaLoader.Instance.imagePath)[0];
     }
 }
