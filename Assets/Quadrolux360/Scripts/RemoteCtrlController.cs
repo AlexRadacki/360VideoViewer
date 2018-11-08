@@ -24,10 +24,13 @@ public class RemoteCtrlController : MonoBehaviour {
     {
         if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger) || Input.GetButtonDown("Jump"))
         {
+            print("RaycastWorldUI");
+
             Ray ray = new Ray(transform.position, transform.forward);
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit, layerIndex))
             {
+                print(hit.transform.name);
                 hit.transform.GetComponent<VideoItem>().StartVideo();
             }
         }

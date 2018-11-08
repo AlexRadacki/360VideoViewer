@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 33712673197322664}
   - component: {fileID: 23559483435179486}
   - component: {fileID: 135897568636294332}
+  - component: {fileID: 114440759229131866}
   m_Layer: 0
   m_Name: Pointer
   m_TagString: Untagged
@@ -84,6 +85,24 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1716117807260180}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114440759229131866
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1716117807260180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30530ad0e40d0a64ea26d753ee4996ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hideByDefault: 1
+  showTimeoutPeriod: 1
+  hideTimeoutPeriod: 0.1
+  dimOnHideRequest: 1
+  depthScaleMultiplier: 0.03
+  rayTransform: {fileID: 0}
+  cursorRadius: 1
 --- !u!135 &135897568636294332
 SphereCollider:
   m_ObjectHideFlags: 1

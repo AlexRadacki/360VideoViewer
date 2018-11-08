@@ -79,21 +79,31 @@ public class OVROverlay : MonoBehaviour
 	/// <summary>
 	/// Specify overlay's type
 	/// </summary>
+	[Tooltip("Specify overlay's type")]
 	public OverlayType currentOverlayType = OverlayType.Overlay;
 
 	/// <summary>
 	/// If true, the texture's content is copied to the compositor each frame.
 	/// </summary>
+	[Tooltip("If true, the texture's content is copied to the compositor each frame.")]
 	public bool isDynamic = false;
 
 	/// <summary>
 	/// If true, the layer would be used to present protected content (e.g. HDCP). The flag is effective only on PC.
 	/// </summary>
+	[Tooltip("If true, the layer would be used to present protected content (e.g. HDCP). The flag is effective only on PC.")]
 	public bool isProtectedContent = false;
+
+	/// <summary>
+	/// The compositionDepth defines the order of the OVROverlays in composition. The overlay/underlay with smaller compositionDepth would be composited in the front of the overlay/underlay with larger compositionDepth.
+	/// </summary>
+	[Tooltip("The compositionDepth defines the order of the OVROverlays in composition. The overlay/underlay with smaller compositionDepth would be composited in the front of the overlay/underlay with larger compositionDepth.")]
+	public int compositionDepth = 0;
 
 	/// <summary>
 	/// Specify overlay's shape
 	/// </summary>
+	[Tooltip("Specify overlay's shape")]
 	public OverlayShape currentOverlayShape = OverlayShape.Quad;
 	private OverlayShape prevOverlayShape = OverlayShape.Quad;
 
@@ -101,6 +111,7 @@ public class OVROverlay : MonoBehaviour
 	/// The left- and right-eye Textures to show in the layer.
 	/// \note If you need to change the texture on a per-frame basis, please use OverrideOverlayTextureInfo(..) to avoid caching issues.
 	/// </summary>
+	[Tooltip("The left- and right-eye Textures to show in the layer.")]
 	public Texture[] textures = new Texture[] { null, null };
 
 	protected IntPtr[] texturePtrs = new IntPtr[] { IntPtr.Zero, IntPtr.Zero };
@@ -209,7 +220,7 @@ public class OVROverlay : MonoBehaviour
 			return false;
 
 		OVRPlugin.LayerDesc desc = OVRPlugin.CalculateLayerDesc(shape, layout, size, mipLevels, sampleCount, etFormat, flags);
-		OVRPlugin.EnqueueSetupLayer(desc, layerIdPtr);
+		OVRPlugin.EnqueueSetupLayer(desc, compositionDepth, layerIdPtr);
 		layerId = (int)layerIdHandle.Target;
 
 		if (layerId > 0)
@@ -233,10 +244,7 @@ public class OVROverlay : MonoBehaviour
 		// For newer SDKs, blit directly to the surface that will be used in compositing.
 
 		if (layerTextures == null)
-		{
-			frameIndex = 0;
 			layerTextures = new LayerTexture[texturesPerStage];
-		}
 
 		for (int eyeId = 0; eyeId < texturesPerStage; ++eyeId)
 		{
@@ -312,6 +320,9 @@ public class OVROverlay : MonoBehaviour
 		}
 
 		layerDesc = new OVRPlugin.LayerDesc();
+
+		frameIndex = 0;
+		prevFrameIndex = -1;
 	}
 
 	private bool LatchLayerTextures()
@@ -322,6 +333,15 @@ public class OVROverlay : MonoBehaviour
 			{
 				if (textures[i] != null)
 				{
+#if UNITY_EDITOR
+					var assetPath = UnityEditor.AssetDatabase.GetAssetPath(textures[i]);
+					var importer = (UnityEditor.TextureImporter)UnityEditor.TextureImporter.GetAtPath(assetPath);
+					if (importer && importer.textureType != UnityEditor.TextureImporterType.Default)
+					{
+						Debug.LogError("Need Default Texture Type for overlay");
+						return false;
+					}
+#endif
 					var rt = textures[i] as RenderTexture;
 					if (rt && !rt.IsCreated())
 						rt.Create();
@@ -404,7 +424,7 @@ public class OVROverlay : MonoBehaviour
 		return newDesc;
 	}
 
-	private bool PopulateLayer(int mipLevels, bool isHdr, OVRPlugin.Sizei size, int sampleCount)
+	private bool PopulateLayer(int mipLevels, bool isHdr, OVRPlugin.Sizei size, int sampleCount, int stage)
 	{
 		bool ret = false;
 
@@ -412,7 +432,6 @@ public class OVROverlay : MonoBehaviour
 
 		for (int eyeId = 0; eyeId < texturesPerStage; ++eyeId)
 		{
-			int stage = frameIndex % stageCount;
 			Texture et = layerTextures[eyeId].swapChain[stage];
 			if (et == null)
 				continue;
@@ -440,10 +459,10 @@ public class OVROverlay : MonoBehaviour
 
 				tempRTDst.DiscardContents();
 
-				var rt = textures[eyeId] as RenderTexture;
-				bool dataIsLinear = isHdr || (rt != null && QualitySettings.activeColorSpace == ColorSpace.Linear);
+				bool dataIsLinear = isHdr || (QualitySettings.activeColorSpace == ColorSpace.Linear);
 
 #if !UNITY_2017_1_OR_NEWER
+				var rt = textures[eyeId] as RenderTexture;
 				dataIsLinear |= rt != null && rt.sRGB; //HACK: Unity 5.6 and earlier convert to linear on read from sRGB RenderTexture.
 #endif
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -489,12 +508,10 @@ public class OVROverlay : MonoBehaviour
 		return ret;
 	}
 
-	private bool SubmitLayer(bool overlay, bool headLocked, OVRPose pose, Vector3 scale)
+	private bool SubmitLayer(bool overlay, bool headLocked, OVRPose pose, Vector3 scale, int frameIndex)
 	{
 		int rightEyeIndex = (texturesPerStage >= 2) ? 1 : 0;
 		bool isOverlayVisible = OVRPlugin.EnqueueSubmitLayer(overlay, headLocked, layerTextures[0].appTexturePtr, layerTextures[rightEyeIndex].appTexturePtr, layerId, frameIndex, pose.flipZ().ToPosef(), scale.ToVector3f(), layerIndex, (OVRPlugin.OverlayShape)currentOverlayShape);
-		if (isDynamic)
-			++frameIndex;
 
 		prevOverlayShape = currentOverlayShape;
 
@@ -534,6 +551,9 @@ public class OVROverlay : MonoBehaviour
 
 	void OnDisable()
 	{
+		if ((gameObject.hideFlags & HideFlags.DontSaveInBuild) != 0)
+			return;
+	
 		DestroyLayerTextures();
 		DestroyLayer();
 	}
@@ -600,11 +620,6 @@ public class OVROverlay : MonoBehaviour
 		if (currentOverlayType == OverlayType.None || textures.Length < texturesPerStage || textures[0] == null)
 			return;
 
-		// Don't submit the same frame twice.
-		if (Time.frameCount <= prevFrameIndex)
-			return;
-		prevFrameIndex = Time.frameCount;
-
 		OVRPose pose = OVRPose.identity;
 		Vector3 scale = Vector3.one;
 		bool overlay = false;
@@ -629,12 +644,21 @@ public class OVROverlay : MonoBehaviour
 
 		if (!LatchLayerTextures())
 			return;
+
+		// Don't populate the same frame image twice.
+		if (frameIndex > prevFrameIndex)
+		{
+			int stage = frameIndex % stageCount;
+			if (!PopulateLayer (newDesc.MipLevels, isHdr, newDesc.TextureSize, newDesc.SampleCount, stage))
+				return;
+		}
+
+		bool isOverlayVisible = SubmitLayer(overlay, headLocked, pose, scale, frameIndex);
+
+		prevFrameIndex = frameIndex;
+		if (isDynamic)
+			++frameIndex;
 		
-		if (!PopulateLayer(newDesc.MipLevels, isHdr, newDesc.TextureSize, newDesc.SampleCount))
-			return;
-
-		bool isOverlayVisible = SubmitLayer(overlay, headLocked, pose, scale);
-
 		// Backward compatibility: show regular renderer if overlay isn't visible.
 		if (rend)
 			rend.enabled = !isOverlayVisible;
