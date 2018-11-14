@@ -1,11 +1,16 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.IO;
+using System.Collections;
+
 
 public class CanvasManager : Singleton<CanvasManager> {
 
     public RectTransform canvasTransform;
+    public CanvasGroup canvasGroup;
 
     private string pathToConfig;
+    private bool isHidden;
 
 	// Use this for initialization
 	void Start ()
@@ -59,5 +64,42 @@ public class CanvasManager : Singleton<CanvasManager> {
         saveData[2] = StaticTools.StringFromVector3(canvasTransform.rotation.eulerAngles);
         saveData[3] = StaticTools.StringFromVector3(canvasTransform.localScale);
         File.WriteAllLines(pathToConfig + "/config.txt", saveData);
+    }
+
+    public void ToggleCanvas()
+    {
+        StartCoroutine(CanvasFader(0.5f));
+    }
+
+    IEnumerator CanvasFader(float duration)
+    {
+        isHidden = !isHidden;
+        float t = 0;
+        
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            if (isHidden)
+            {
+                canvasGroup.alpha = Mathf.Lerp(1f, 0f, t / duration);
+            }
+            else
+            {
+                canvasGroup.alpha = Mathf.Lerp(0f, 1f, t / duration);
+            }
+
+            yield return new WaitForEndOfFrame();
+        }
+
+        if (isHidden)
+        {
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+        else
+        {
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+        }
     }
 }

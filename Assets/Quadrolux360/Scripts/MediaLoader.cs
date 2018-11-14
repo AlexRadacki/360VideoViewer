@@ -11,12 +11,14 @@ public class MediaLoader : Singleton<MediaLoader> {
     public Transform contentParent;
     public GameObject movieItemPrefab;
 
+    public Texture2D bgTex;
+
     // Use this for initialization
     void Awake ()
     {
 #if UNITY_EDITOR
-        imagePath = Application.streamingAssetsPath + @"\Image\";
-        videoPath = Application.streamingAssetsPath + @"\Video\";
+        imagePath = Application.dataPath + @"\Editor\StreamingAssets\Image\";
+        videoPath = Application.dataPath + @"\Editor\StreamingAssets\Video\";
 #elif UNITY_ANDROID && !UNITY_EDITOR
       imagePath = "/storage/emulated/0/Quadrolux/Image/";
       videoPath = "/storage/emulated/0/Quadrolux/Video/";
@@ -33,6 +35,7 @@ public class MediaLoader : Singleton<MediaLoader> {
         tex.LoadImage(File.ReadAllBytes(name));
         tex.Apply();
         target.mainTexture = tex;
+        bgTex = tex;
     }
 
     public void CreateVideoItem(string path)
