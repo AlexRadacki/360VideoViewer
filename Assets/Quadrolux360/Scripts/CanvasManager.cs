@@ -8,14 +8,16 @@ public class CanvasManager : Singleton<CanvasManager> {
 
     public RectTransform canvasTransform;
     public CanvasGroup canvasGroup;
+    public GridLayoutGroup gridLayout;
 
     private string pathToConfig;
     private bool isHidden;
+    private Transform gridParent;
 
-	// Use this for initialization
-	void Start ()
+    // Use this for initialization
+    void Start ()
     {
-
+        gridParent = gridLayout.transform;
         // load config file for the canvas placement
 #if UNITY_EDITOR
         pathToConfig = Application.streamingAssetsPath;
@@ -68,14 +70,59 @@ public class CanvasManager : Singleton<CanvasManager> {
 
     public void ToggleCanvas()
     {
-        StartCoroutine(CanvasFader(0.5f));
+        StartCoroutine(CanvasFader(1f));
+    }
+
+    public void UpdateMediaGrid(int amount)
+    {
+        GameObject[] mediaItems = new GameObject[gridParent.childCount];
+        for (int i = 0; i < gridParent.childCount; i++)
+        {
+            mediaItems[i] = gridParent.GetChild(i).gameObject;
+            mediaItems[i].SetActive(false);
+        }
+
+        switch (amount)
+        {
+            case 1:
+                mediaItems[0].SetActive(true);
+                gridLayout.childAlignment = TextAnchor.MiddleCenter;
+                gridLayout.cellSize = new Vector2(1680, 945);
+                break;
+            case 2:
+                mediaItems[0].SetActive(true);
+                mediaItems[1].SetActive(true);
+                gridLayout.childAlignment = TextAnchor.MiddleCenter;
+                gridLayout.cellSize = new Vector2(840, 472.5f);
+                break;
+            case 3:
+                mediaItems[0].SetActive(true);
+                mediaItems[1].SetActive(true);
+                mediaItems[2].SetActive(true);
+                gridLayout.childAlignment = TextAnchor.UpperLeft;
+                gridLayout.cellSize = new Vector2(840, 472.5f);
+                break;
+            case 4:
+                mediaItems[0].SetActive(true);
+                mediaItems[1].SetActive(true);
+                mediaItems[2].SetActive(true);
+                mediaItems[3].SetActive(true);
+                gridLayout.childAlignment = TextAnchor.UpperLeft;
+                gridLayout.cellSize = new Vector2(840, 472.5f);
+                break;
+            default:
+                break;
+        }
     }
 
     IEnumerator CanvasFader(float duration)
     {
         isHidden = !isHidden;
         float t = 0;
-        
+        if (!isHidden)
+        {
+            yield return new WaitForSeconds(1f);
+        }
         while (t < duration)
         {
             t += Time.deltaTime;

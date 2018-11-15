@@ -43,6 +43,7 @@ public class AppController : Singleton<AppController> {
         {
             MediaLoader.Instance.CreateVideoItem(item);
         }
+        CanvasManager.Instance.UpdateMediaGrid(1);
     }
 
     string GetBgName()

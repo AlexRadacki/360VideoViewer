@@ -23,6 +23,10 @@ public class MediaLoader : Singleton<MediaLoader> {
       imagePath = "/storage/emulated/0/Quadrolux/Image/";
       videoPath = "/storage/emulated/0/Quadrolux/Video/";
 #endif
+        if (!Directory.Exists(imagePath))
+            Directory.CreateDirectory(imagePath);
+        if (!Directory.Exists(videoPath))
+            Directory.CreateDirectory(videoPath);
     }
 
     public void LoadImage(string name, Material target)

@@ -69,6 +69,7 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
         // switch texture to main
         //mat.mainTexture = MediaLoader.Instance.bgTex;
         videoPlayer.Stop();
+        CanvasManager.Instance.UpdateMediaGrid(2);
         yield return new WaitForEndOfFrame();
 
         StartCoroutine(CanvasBlenderClear(1f));
@@ -82,5 +83,6 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
             item.isPlaying = false;
         }
         StartCoroutine(BackToMain());
+
     }
 }
