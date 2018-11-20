@@ -7,6 +7,7 @@ using System.Collections;
 public class CanvasManager : Singleton<CanvasManager> {
 
     public RectTransform canvasTransform;
+    public Transform panoramaSphere;
     public CanvasGroup canvasGroup;
     public GridLayoutGroup gridLayout;
 
@@ -20,10 +21,12 @@ public class CanvasManager : Singleton<CanvasManager> {
         gridParent = gridLayout.transform;
         // load config file for the canvas placement
 #if UNITY_EDITOR
-        pathToConfig = Application.streamingAssetsPath;
+        pathToConfig = Application.dataPath + @"\Editor\StreamingAssets\Config\";
 #elif UNITY_ANDROID && !UNITY_EDITOR
-        pathToConfig = Application.persistentDataPath;
+        pathToConfig = @"/storage/emulated/0/Quadrolux/Config";
 #endif
+        if (!Directory.Exists(pathToConfig))
+            Directory.CreateDirectory(pathToConfig);
 
         if (File.Exists(pathToConfig + "/config.txt"))
         {
@@ -37,6 +40,10 @@ public class CanvasManager : Singleton<CanvasManager> {
                 canvasTransform.sizeDelta = StaticTools.Vector2FromString(configData[1], ',');
                 canvasTransform.rotation = Quaternion.Euler(StaticTools.Vector3FromString(configData[2], ','));
                 canvasTransform.localScale = StaticTools.Vector3FromString(configData[3], ',');
+
+                panoramaSphere.position = StaticTools.Vector3FromString(configData[5], ',');
+                panoramaSphere.rotation = Quaternion.Euler(StaticTools.Vector3FromString(configData[6], ','));
+                panoramaSphere.localScale = StaticTools.Vector3FromString(configData[7], ',');
             }
         }
         else
@@ -47,24 +54,29 @@ public class CanvasManager : Singleton<CanvasManager> {
 
     private void Update()
     {
-        if (OVRInput.GetDown(OVRInput.Button.Back))
+        if (OVRInput.GetDown(OVRInput.Button.Back) || Input.GetKeyDown(KeyCode.Space))
         {
             SaveConfigToFile();
         }
     }
 
-    void SaveConfigToFile()
+    public void SaveConfigToFile()
     {
         if (!File.Exists(pathToConfig + "/config.txt"))
         {
             File.Create(pathToConfig + "/config.txt");
         }
 
-        string[] saveData = new string[4];
+        string[] saveData = new string[8];
         saveData[0] = StaticTools.StringFromVector3(canvasTransform.position);
         saveData[1] = StaticTools.StringFromVector2(canvasTransform.sizeDelta);
         saveData[2] = StaticTools.StringFromVector3(canvasTransform.rotation.eulerAngles);
         saveData[3] = StaticTools.StringFromVector3(canvasTransform.localScale);
+        saveData[4] = "---";
+        saveData[5] = StaticTools.StringFromVector3(panoramaSphere.position);
+        saveData[6] = StaticTools.StringFromVector3(panoramaSphere.rotation.eulerAngles);
+        saveData[7] = StaticTools.StringFromVector3(panoramaSphere.localScale);
+
         File.WriteAllLines(pathToConfig + "/config.txt", saveData);
     }
 

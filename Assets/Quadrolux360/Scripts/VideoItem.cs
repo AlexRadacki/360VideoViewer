@@ -8,12 +8,12 @@ public class VideoItem : MonoBehaviour {
     public string path;
     public float gazeTrigger;
     public Image fillSprite;
+    public Image thumbnail;
     public bool isPlaying;
 
     private bool isLookingAt;
     private float gazeTimer;
     private float fillAmount;
-
 
     private PanoramaCanvas panoramaCanvas;
 
@@ -21,6 +21,7 @@ public class VideoItem : MonoBehaviour {
 	void Start ()
     {
         panoramaCanvas = FindObjectOfType<PanoramaCanvas>();
+        RemoteCtrlController.Instance.videoItems.Add(this);
     }
 	
     public void StartVideo()

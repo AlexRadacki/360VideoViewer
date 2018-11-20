@@ -45,6 +45,21 @@ public class MediaLoader : Singleton<MediaLoader> {
     public void CreateVideoItem(string path)
     {
         GameObject newMovieItem = Instantiate(movieItemPrefab, contentParent);
-        newMovieItem.GetComponent<VideoItem>().path = path;
+        VideoItem videoItem = newMovieItem.GetComponent<VideoItem>();
+        videoItem.path = path;
+
+        string thumbnailPath = path.Substring(0, path.Length - 3);
+        thumbnailPath += "jpg";
+        if (File.Exists(thumbnailPath))
+        {
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(File.ReadAllBytes(thumbnailPath));
+            tex.Apply();
+            videoItem.thumbnail.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+        }
+        else
+        {
+            Debug.Log("no thumbnail found at: " + thumbnailPath);
+        }
     }
 }

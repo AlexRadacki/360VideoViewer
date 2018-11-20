@@ -5,7 +5,7 @@ using UnityEngine.Audio;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class RemoteCtrlController : MonoBehaviour {
+public class RemoteCtrlController : Singleton<RemoteCtrlController> {
 
     public string uiMovieItemLayer;
     public CanvasGroup controllerMainMenu;
@@ -20,6 +20,8 @@ public class RemoteCtrlController : MonoBehaviour {
     public int currentMode;
     public AudioMixer mixer;
 
+    public List<VideoItem> videoItems = new List<VideoItem>();
+
     private int volume = 0;
     private int layerIndex;
     private float operatorMenuTimer;
@@ -29,18 +31,22 @@ public class RemoteCtrlController : MonoBehaviour {
     private int buttonIndex;
 
     private Button currentButton;
+    private Transform transformToMove;
+    private MeshRenderer meshRenderer;
 
     // Use this for initialization
     void Start ()
     {
         layerIndex = LayerMask.NameToLayer(uiMovieItemLayer);
+        meshRenderer = GetComponent<MeshRenderer>();
+        meshRenderer.enabled = false;
     }
 	
 	// Update is called once per frame
 	void Update () {
         //RaycastWorldUI();
 
-        if (currentMode == 0 && operatorMenuTimer < 2f && (OVRInput.Get(OVRInput.Button.Back) || Input.GetKey(KeyCode.Backspace)))
+        if (currentMode == 0 && operatorMenuTimer < 2f && (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger) || Input.GetKey(KeyCode.Backspace)))
         {
             operatorMenuTimer += Time.deltaTime;
         }
@@ -52,6 +58,8 @@ public class RemoteCtrlController : MonoBehaviour {
         if (operatorMenuTimer > 2f)
         {
             currentMode = 1;
+            meshRenderer.enabled = true;
+            Debug.Log("enter menu");
             ToggleMenu(controllerMainMenu, true);
             SelectButton(mainMenuButtonsLeft[0]);
         }
@@ -133,9 +141,57 @@ public class RemoteCtrlController : MonoBehaviour {
                     SelectButton(moveMenuButtonsLeft[1]);
                 }
             }
+
+            if ((currentMode == 3 && transformToMove != null))
+            {
+                if (((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).y < -0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.DownArrow)))
+                {
+                    if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger) || Input.GetKey(KeyCode.RightShift))
+                        transformToMove.position -= new Vector3(0, 0.1f, 0);
+                    else
+                        transformToMove.position -= new Vector3(0, 0, 0.1f);
+                }
+                if (((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).y > 0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.UpArrow)))
+                {
+                    if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger) || Input.GetKey(KeyCode.RightShift))
+                        transformToMove.position += new Vector3(0, 0.1f, 0);
+                    else
+                        transformToMove.position += new Vector3(0, 0, 0.1f);
+                }
+                if (((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).x < -0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.LeftArrow)))
+                {
+                    if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger) || Input.GetKey(KeyCode.RightShift))
+                        transformToMove.Rotate(transformToMove.up, -1f);
+                    else
+                        transformToMove.position -= new Vector3(0.1f, 0, 0);
+                }
+                if (((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).x > 0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.RightArrow)))
+                {
+                    if (OVRInput.Get(OVRInput.Button.PrimaryIndexTrigger) || Input.GetKey(KeyCode.RightShift))
+                        transformToMove.Rotate(transformToMove.up, 1f);
+                    else
+                    transformToMove.position += new Vector3(0.1f, 0, 0);
+                }
+            }
         }
         else
         {
+            if ((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).x < -0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                if (!PanoramaCanvas.Instance.isPlaying)
+                {
+                    videoItems[0].StartVideo();
+                }
+
+            }
+            if ((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).x > 0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                if (!PanoramaCanvas.Instance.isPlaying)
+                {
+                    videoItems[1].StartVideo();
+                }
+            }
+
             if ((OVRInput.Get(OVRInput.Axis2D.PrimaryTouchpad).y > 0.5f && OVRInput.GetDown(OVRInput.Button.PrimaryTouchpad)) || Input.GetKeyDown(KeyCode.UpArrow))
             {
                 //Volume up
@@ -147,6 +203,14 @@ public class RemoteCtrlController : MonoBehaviour {
                 //Volume down
                 if (volume > -80) volume -= 10;
                 mixer.SetFloat("Volume", volume);
+            }
+        }
+
+        if (PanoramaCanvas.Instance.isPlaying)
+        {
+            if (OVRInput.GetDown(OVRInput.Button.Back) || Input.GetKeyDown(KeyCode.Backspace))
+            {
+                PanoramaCanvas.Instance.StopMovie();
             }
         }
     }
@@ -195,6 +259,7 @@ public class RemoteCtrlController : MonoBehaviour {
                 currentMode = 0;
                 rightButtonSide = false;
                 ToggleMenu(controllerMainMenu, false);
+                meshRenderer.enabled = false;
                 break;
             case 2:
                 currentMode = 1;
@@ -229,12 +294,18 @@ public class RemoteCtrlController : MonoBehaviour {
         currentMode = 3;
         ToggleMenu(moveMenu, false);
         ToggleMenu(moveModeImage, true);
+        transformToMove = target;
     }
+
+    public void SaveTransforms()
+    {
+        CanvasManager.Instance.SaveConfigToFile();
+    } 
 
     void SelectButton(Button btn)
     {
         btn.Select();
-        btn.OnSelect(null);
+        //btn.OnSelect(null);
         currentButton = btn;
     }
 }

@@ -8,6 +8,7 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
     public VideoPlayer videoPlayer;
     public Material mat;
     public Material innerMat;
+    public bool isPlaying;
 
 	// Use this for initialization
 	void Start () {
@@ -48,12 +49,23 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
         StartCoroutine(BlendAndPlay(url));
     }
 
+    public void StopMovie()
+    {
+        CanvasManager.Instance.ToggleCanvas();
+        foreach (var item in FindObjectsOfType<VideoItem>())
+        {
+            item.isPlaying = false;
+        }
+        StartCoroutine(BackToMain());
+    }
+
     IEnumerator BlendAndPlay(string url)
     {
         StartCoroutine(CanvasBlenderBlack(1f));
         yield return new WaitForSeconds(1f);
         videoPlayer.url = url;
         videoPlayer.Play();
+        isPlaying = true;
         while (!videoPlayer.isPrepared)
         {
             yield return new WaitForEndOfFrame();
@@ -69,6 +81,8 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
         // switch texture to main
         //mat.mainTexture = MediaLoader.Instance.bgTex;
         videoPlayer.Stop();
+        isPlaying = false;
+
         CanvasManager.Instance.UpdateMediaGrid(2);
         yield return new WaitForEndOfFrame();
 
@@ -83,6 +97,5 @@ public class PanoramaCanvas : Singleton<PanoramaCanvas> {
             item.isPlaying = false;
         }
         StartCoroutine(BackToMain());
-
     }
 }

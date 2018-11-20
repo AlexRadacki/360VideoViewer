@@ -46,7 +46,7 @@ public class ProcedualSphere : MonoBehaviour {
         #region Normales		
         Vector3[] normales = new Vector3[vertices.Length];
         for (int n = 0; n < vertices.Length; n++)
-            normales[n] = -vertices[n].normalized;
+            normales[n] = vertices[n].normalized;
         #endregion
 
         #region UVs
@@ -133,5 +133,14 @@ public class ProcedualSphere : MonoBehaviour {
             }
             mesh.SetTriangles(triangles, m);
         }
+
+        Vector2[] uvs = new Vector2[mesh.vertices.Length];
+        uvs[0] = Vector2.up;
+        uvs[uvs.Length - 1] = Vector2.zero;
+        for (int lat = 0; lat < nbLat; lat++)
+            for (int lon = 0; lon <= nbLong; lon++)
+                uvs[lon + lat * (nbLong + 1) + 1] = new Vector2(1f - ((float)lon / nbLong), 1f - (float)(lat + 1) / (nbLat + 1));
+
+        mesh.uv = uvs;
     }
 }
