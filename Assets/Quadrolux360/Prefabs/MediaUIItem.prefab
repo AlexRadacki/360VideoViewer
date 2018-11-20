@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   path: 
-  gazeTrigger: 1
+  gazeTrigger: 2
   fillSprite: {fileID: 114575698221041582}
   thumbnail: {fileID: 114834929195900094}
   isPlaying: 0

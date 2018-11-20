@@ -18,6 +18,7 @@ public class CanvasManager : Singleton<CanvasManager> {
     // Use this for initialization
     void Start ()
     {
+        OVRManager.HMDUnmounted += OnHeadsetUnmounted;
         gridParent = gridLayout.transform;
         // load config file for the canvas placement
 #if UNITY_EDITOR
@@ -60,6 +61,12 @@ public class CanvasManager : Singleton<CanvasManager> {
         }
     }
 
+    void OnHeadsetUnmounted()
+    {
+        UpdateMediaGrid(1);
+        if(PanoramaCanvas.Instance.isPlaying) PanoramaCanvas.Instance.StopMovie();
+    }
+
     public void SaveConfigToFile()
     {
         if (!File.Exists(pathToConfig + "/config.txt"))
@@ -100,9 +107,11 @@ public class CanvasManager : Singleton<CanvasManager> {
                 mediaItems[0].SetActive(true);
                 gridLayout.childAlignment = TextAnchor.MiddleCenter;
                 gridLayout.cellSize = new Vector2(1680, 945);
+                mediaItems[0].GetComponent<VideoItem>().thumbnail.enabled = false;
                 break;
             case 2:
                 mediaItems[0].SetActive(true);
+                mediaItems[0].GetComponent<VideoItem>().thumbnail.enabled = true;
                 mediaItems[1].SetActive(true);
                 gridLayout.childAlignment = TextAnchor.MiddleCenter;
                 gridLayout.cellSize = new Vector2(840, 472.5f);

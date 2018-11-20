@@ -304,8 +304,12 @@ public class RemoteCtrlController : Singleton<RemoteCtrlController> {
 
     void SelectButton(Button btn)
     {
+        foreach (var item in FindObjectsOfType<Text>())
+        {
+            item.color = Color.white;
+        }
         btn.Select();
-        //btn.OnSelect(null);
+        btn.transform.GetChild(0).GetComponent<Text>().color = Color.yellow;
         currentButton = btn;
     }
 }
