@@ -59,12 +59,16 @@ public class CanvasManager : Singleton<CanvasManager> {
         {
             SaveConfigToFile();
         }
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            OnHeadsetUnmounted();
+        }
     }
 
     void OnHeadsetUnmounted()
     {
+        if(PanoramaCanvas.Instance.isPlaying) PanoramaCanvas.Instance.StopMovieAndGoBackToStart();
         UpdateMediaGrid(1);
-        if(PanoramaCanvas.Instance.isPlaying) PanoramaCanvas.Instance.StopMovie();
     }
 
     public void SaveConfigToFile()
